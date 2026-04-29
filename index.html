@@ -1,324 +1,484 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FarmGuard AI</title>
+  <meta charset="UTF-8">
+  <title>FarmGuard AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+    .glass { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255,255,255,0.4); }
     
-    <!-- React & ReactDOM via CDN -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    /* Voice Waveform */
+    .waveform { display: flex; align-items: center; justify-content: center; gap: 4px; height: 24px; }
+    .waveform span { width: 4px; height: 10px; background: white; border-radius: 2px; animation: wave 1s infinite ease-in-out; }
+    .waveform span:nth-child(2) { animation-delay: 0.1s; }
+    .waveform span:nth-child(3) { animation-delay: 0.2s; }
+    @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(2.5); } }
     
-    <!-- Babel for in-browser JSX parsing -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --primary: #10b981;
-            --primary-dark: #059669;
-            --secondary: #0ea5e9;
-            --danger: #ef4444;
-            --danger-light: #fee2e2;
-            --warning: #f59e0b;
-            --warning-light: #fef3c7;
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --dark: #0f172a;
-            --surface-alt: #f1f5f9;
-            --text: #334155;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.4);
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--surface-alt);
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(158, 86%, 89%, 1) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, hsla(199, 93%, 89%, 1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, hsla(39, 94%, 86%, 1) 0px, transparent 50%),
-                radial-gradient(at 0% 100%, hsla(158, 86%, 89%, 1) 0px, transparent 50%);
-            background-attachment: fixed;
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-
-        h1, h2, h3 { font-family: 'Outfit', sans-serif; color: var(--dark); }
-
-        .app-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-
-        .app-header { text-align: center; margin-bottom: 3rem; }
-        .app-header h1 {
-            font-size: 3rem; font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        .app-header p { font-size: 1.1rem; color: var(--text-muted); }
-
-        .glass-card {
-            background: var(--glass-bg); backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border); border-radius: 1.5rem;
-            padding: 2rem; box-shadow: var(--shadow-lg); transition: all 0.3s ease;
-        }
-        .glass-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-glow); }
-
-        .upload-area {
-            border: 2px dashed var(--primary); border-radius: 1rem;
-            padding: 3rem 2rem; text-align: center; cursor: pointer;
-            background-color: rgba(255, 255, 255, 0.5); transition: all 0.3s ease;
-        }
-        .upload-area:hover, .upload-area.drag-active {
-            background-color: var(--success-light); border-color: var(--primary-dark);
-        }
-
-        .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
-        .upload-text { font-size: 1.25rem; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; }
-        .file-input { display: none; }
-
-        .image-preview { width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.75rem; margin-bottom: 1rem; }
-
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600;
-            font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 0.5rem;
-            border: none; cursor: pointer; transition: all 0.3s ease; gap: 0.5rem;
-        }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.39); }
-
-        .results-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; margin-top: 2rem; }
-        .result-section { padding: 1.5rem; border-radius: 1rem; background: white; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        
-        .col-12 { grid-column: span 12; }
-        .col-8 { grid-column: span 8; }
-        .col-4 { grid-column: span 4; }
-        @media (max-width: 992px) { .col-8, .col-4 { grid-column: span 12; } }
-
-        .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
-        .highlight-value { font-size: 2.5rem; font-weight: 700; font-family: 'Outfit', sans-serif; line-height: 1.2; margin-bottom: 0.5rem; }
-        
-        .badge {
-            display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px;
-            font-size: 0.875rem; font-weight: 600; text-transform: uppercase;
-        }
-        .badge-High, .badge-Immediate { background-color: var(--danger-light); color: var(--danger); }
-        .badge-Medium, .badge-Soon { background-color: var(--warning-light); color: var(--warning); }
-        .badge-Low, .badge-Monitor { background-color: var(--success-light); color: var(--success); }
-
-        .impact-card { background: linear-gradient(135deg, #fff1f2, #ffe4e6); border-color: #fecdd3; position: relative; overflow: hidden; }
-        .impact-value { font-size: 3rem; font-weight: 700; color: var(--danger); font-family: 'Outfit', sans-serif; }
-
-        .treatment-list { list-style: none; }
-        .treatment-list li { position: relative; padding-left: 1.5rem; margin-bottom: 0.75rem; }
-        .treatment-list li::before { content: '→'; position: absolute; left: 0; color: var(--primary); font-weight: bold; }
-
-        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 0; }
-        .spinner {
-            width: 50px; height: 50px; border: 5px solid var(--surface-alt);
-            border-top-color: var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 1rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .flow-indicator { display: flex; justify-content: center; align-items: center; margin-bottom: 2rem; gap: 1rem; }
-        .flow-step { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; color: var(--text-muted); }
-        .flow-step.active { color: var(--primary); font-weight: 600; }
-        .flow-dot {
-            width: 24px; height: 24px; border-radius: 50%; background-color: var(--surface-alt);
-            display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
-        }
-        .flow-step.active .flow-dot { background-color: var(--primary); color: white; }
-        .flow-line { height: 2px; width: 40px; background-color: var(--border); }
-        .flow-line.active { background-color: var(--primary); }
-    </style>
+    /* Loader */
+    .loader { border: 4px solid #f3f4f6; border-top: 4px solid #10b981; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Progress Circle */
+    .circular-chart { display: block; margin: 0 auto; max-width: 80%; max-height: 250px; }
+    .circle-bg { fill: none; stroke: #f1f5f9; stroke-width: 3.8; }
+    .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1.5s ease-out; }
+    .percentage { fill: #1e293b; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.5em; text-anchor: middle; font-weight: 800;}
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useRef } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-        function App() {
-            const [step, setStep] = useState(1);
-            const [selectedImage, setSelectedImage] = useState(null);
-            const [previewUrl, setPreviewUrl] = useState(null);
-            const [results, setResults] = useState(null);
-            const [isDragging, setIsDragging] = useState(false);
-            const fileInputRef = useRef(null);
+    const TRANSLATIONS = {
+      en: {
+        title: "FarmGuard AI",
+        crop: "Crop", season: "Season", upload: "Upload Crop Image",
+        listening: "Listening...", voiceText: "Use Voice",
+        analyze: "Analyze Crop",
+        detected: "Detected", action: "Action Plan", cost: "Cost", loss: "Loss if untreated",
+        netBenefit: "Net Benefit", share: "Share to WhatsApp",
+        history: "Historical Scan Log", healthy: "Healthy", chemical: "Chemical", organic: "Organic",
+        urgency: "Act within 24 hours", resources: "Nearby Resources",
+        chatHint: "Ask a farming question..."
+      },
+      sw: {
+        title: "FarmGuard AI",
+        crop: "Zao", season: "Msimu", upload: "Pakia Picha ya Zao",
+        listening: "Inasikiliza...", voiceText: "Tumia Sauti",
+        analyze: "Changanua Zao",
+        detected: "Imezinduliwa", action: "Kitendo", cost: "Gharama", loss: "Hasara",
+        netBenefit: "Faida Halisi", share: "Shiriki WhatsApp",
+        history: "Kumbukumbu", healthy: "Mzima", chemical: "Kemikali", organic: "Kikaboni",
+        urgency: "Chukua hatua ndani ya saa 24", resources: "Rasilimali za Karibu",
+        chatHint: "Uliza swali la kilimo..."
+      }
+    };
 
-            const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
-            const handleDragLeave = () => setIsDragging(false);
-            const handleDrop = (e) => {
-                e.preventDefault(); setIsDragging(false);
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    handleImageSelect(e.dataTransfer.files[0]);
-                }
-            };
-            const handleFileInput = (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    handleImageSelect(e.target.files[0]);
-                }
-            };
+    // Icons
+    const Icons = {
+      Mic: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
+      Chat: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
+      Close: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+      Phone: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
+      Map: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      Share: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>,
+      Alert: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    };
 
-            const handleImageSelect = (file) => {
-                setSelectedImage(file);
-                setPreviewUrl(URL.createObjectURL(file));
-            };
+    function App() {
+      const [lang, setLang] = useState('en');
+      const t = TRANSLATIONS[lang];
+      const [step, setStep] = useState(1);
+      
+      const [crop, setCrop] = useState('Maize');
+      const [season, setSeason] = useState('Growing');
+      
+      const [image, setImage] = useState(null);
+      const [isListening, setIsListening] = useState(false);
+      const [isDragging, setIsDragging] = useState(false);
+      const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('farmguard_history')) || [
+        { date: '2 days ago', disease: 'Healthy', severity: 'Low', trend: 'up' },
+        { date: '5 days ago', disease: 'Early Blight', severity: 'Medium', trend: 'down' }
+      ]);
+      const [results, setResults] = useState(null);
+      
+      const [treatmentType, setTreatmentType] = useState('chemical');
+      const [tasks, setTasks] = useState([]);
+      
+      const [chatOpen, setChatOpen] = useState(false);
+      const [chatMsgs, setChatMsgs] = useState([{role: 'bot', text: 'Habari! I am your FarmGuard AI Guide. Ask me "How do I use this site?" or "What does the action plan do?"'}]);
+      const [chatInput, setChatInput] = useState('');
 
-            const startAnalysis = () => {
-                if (!selectedImage) return;
-                setStep(2);
-                
-                // Simulate network delay then provide robust mock response
-                setTimeout(() => {
-                    const fname = selectedImage.name.toLowerCase();
-                    let data;
-                    if (fname.includes('tomato')) {
-                        data = {
-                            disease_name: "Tomato Late Blight", confidence: 0.92, severity: "High", urgency: "Immediate",
-                            treatment: ["Apply copper-based fungicide immediately", "Destroy heavily infected plants", "Avoid overhead watering"],
-                            treatment_cost_kes: 1500, yield_loss_percent: 60, financial_loss_kes: 25000, market_price_per_kg: 80, buyers: ["City Groceries", "Regional Processor"]
-                        };
-                    } else if (fname.includes('healthy')) {
-                        data = {
-                            disease_name: "Healthy Crop", confidence: 0.98, severity: "Low", urgency: "Monitor",
-                            treatment: ["Maintain current watering schedule", "Apply standard fertilizer as planned"],
-                            treatment_cost_kes: 0, yield_loss_percent: 0, financial_loss_kes: 0, market_price_per_kg: 55, buyers: ["Local Market", "Export Agent"]
-                        };
-                    } else {
-                        data = {
-                            disease_name: "Maize Leaf Blight", confidence: 0.87, severity: "High", urgency: "Immediate",
-                            treatment: ["Apply fungicide within 24 hours", "Remove infected leaves to prevent spread"],
-                            treatment_cost_kes: 2000, yield_loss_percent: 40, financial_loss_kes: 12000, market_price_per_kg: 50, buyers: ["Local Cooperative", "Nairobi Fresh Market"]
-                        };
-                    }
-                    setResults(data);
-                    setStep(3);
-                }, 1500);
-            };
+      const fileInputRef = useRef(null);
 
-            const formatKes = (amount) => `KES ${amount.toLocaleString()}`;
+      useEffect(() => {
+        localStorage.setItem('farmguard_history', JSON.stringify(history));
+      }, [history]);
 
-            return (
-                <div className="app-container">
-                    <header className="app-header">
-                        <h1>🌱 FarmGuard AI</h1>
-                        <p>Intelligent Decision Support & Financial Insight for Farmers</p>
-                    </header>
-
-                    <div className="flow-indicator">
-                        <div className={`flow-step ${step >= 1 ? 'active' : ''}`}><div className="flow-dot">1</div><span>Upload</span></div>
-                        <div className={`flow-line ${step >= 2 ? 'active' : ''}`}></div>
-                        <div className={`flow-step ${step >= 2 ? 'active' : ''}`}><div className="flow-dot">2</div><span>Detection</span></div>
-                        <div className={`flow-line ${step >= 3 ? 'active' : ''}`}></div>
-                        <div className={`flow-step ${step >= 3 ? 'active' : ''}`}><div className="flow-dot">3</div><span>Action & Impact</span></div>
-                    </div>
-
-                    <main>
-                        {step === 1 && (
-                            <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                                <h2 className="section-title">Scan Crop Image</h2>
-                                <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>Upload a photo to receive an instant diagnosis and financial impact report.</p>
-                                
-                                <div className={`upload-area ${isDragging ? 'drag-active' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current.click()}>
-                                    {previewUrl ? <img src={previewUrl} className="image-preview" /> : <><div className="upload-icon">📸</div><div className="upload-text">Drag & Drop Image Here</div></>}
-                                    <input type="file" ref={fileInputRef} onChange={handleFileInput} className="file-input" accept="image/*" />
-                                </div>
-                                
-                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                                    <button className="btn" style={{ background: 'var(--surface-alt)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); alert('Voice input disabled in demo.'); }}>🎤 Voice Input</button>
-                                </div>
-
-                                {previewUrl && (
-                                    <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                                        <button className="btn" onClick={(e) => { e.stopPropagation(); setSelectedImage(null); setPreviewUrl(null); }}>Change</button>
-                                        <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); startAnalysis(); }}>Analyze Crop 🚀</button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {step === 2 && (
-                            <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-                                <div className="loader-container">
-                                    <div className="spinner"></div>
-                                    <h2>Analyzing Crop Health...</h2>
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 3 && results && (
-                            <div>
-                                <div className="glass-card" style={{ marginBottom: '1.5rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                                    <img src={previewUrl} style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '1rem' }} />
-                                    <div>
-                                        <h2 style={{ fontSize: '2rem', margin: 0 }}>{results.disease_name} <span className={`badge badge-${results.severity}`}>{results.severity}</span></h2>
-                                        <p style={{ color: 'var(--text-muted)' }}>Confidence: {(results.confidence * 100).toFixed(1)}%</p>
-                                        <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => { setStep(1); setSelectedImage(null); setPreviewUrl(null); setResults(null); }}>Scan Another</button>
-                                    </div>
-                                </div>
-
-                                <div className="results-grid">
-                                    <div className="result-section col-8">
-                                        <h3 className="section-title">🛠️ Recommended Action</h3>
-                                        <div style={{ marginBottom: '1rem' }}><span className={`badge badge-${results.urgency}`}>{results.urgency} Action Required</span></div>
-                                        <ul className="treatment-list">{results.treatment.map((step, i) => <li key={i}>{step}</li>)}</ul>
-                                        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface-alt)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontWeight: 600 }}>Treatment Cost:</span><span style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatKes(results.treatment_cost_kes)}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="result-section impact-card col-4">
-                                        <h3 className="section-title text-danger">⚠️ Financial Risk</h3>
-                                        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>If left untreated.</p>
-                                        <div style={{ marginBottom: '1.5rem' }}>
-                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--danger)' }}>Estimated Loss</div>
-                                            <div className="impact-value">{formatKes(results.financial_loss_kes)}</div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--danger)' }}>Potential Yield Loss</div>
-                                            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--danger)' }}>{results.yield_loss_percent}%</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="result-section col-12">
-                                        <h3 className="section-title">📈 Market Insights (Post-Harvest)</h3>
-                                        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                                            <div style={{ flex: 1, minWidth: '200px' }}>
-                                                <div style={{ color: 'var(--text-muted)' }}>Current Market Price</div>
-                                                <div className="highlight-value" style={{ color: 'var(--secondary)' }}>{formatKes(results.market_price_per_kg)} <span style={{ fontSize: '1rem' }}>/ kg</span></div>
-                                            </div>
-                                            <div style={{ flex: 2, minWidth: '250px' }}>
-                                                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Suggested Buyers</div>
-                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                    {results.buyers.map((b, i) => <span key={i} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--surface-alt)', borderRadius: '0.5rem' }}>🤝 {b}</span>)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            );
+      const handleVoice = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert('Voice recognition not supported in your browser.');
+          return;
         }
+        const recognition = new SpeechRecognition();
+        setIsListening(true);
+        recognition.onresult = (event) => {
+          const text = event.results[0][0].transcript.toLowerCase();
+          setIsListening(false);
+          if (text.includes('maize') || text.includes('disease') || text.includes('leaf')) {
+            setImage('https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?auto=format&fit=crop&w=400&q=80');
+          }
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.start();
+      };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+      const startAnalysis = () => {
+        setStep(2);
+        setTimeout(() => {
+          const mockData = {
+            disease: "Maize Leaf Blight",
+            confidence: 87,
+            severity: "High",
+            loss: 12000,
+            marketPrice: 50,
+            treatments: {
+              chemical: { cost: 2000, effect: 95, time: '24hrs', name: 'Mancozeb Fungicide', desc: 'Recommendation: Chemical for High Severity' },
+              organic: { cost: 800, effect: 70, time: '72hrs', name: 'Neem Oil Extract', desc: 'Recommendation: Better for prevention' }
+            }
+          };
+          setResults(mockData);
+          setTasks([
+            { id: 1, text: `NOW: Apply fungicide (KES ${mockData.treatments.chemical.cost.toLocaleString()})`, done: false },
+            { id: 2, text: '24 HRS: Remove infected leaves', done: false },
+            { id: 3, text: '48 HRS: Monitor new growth', done: false },
+            { id: 4, text: '7 DAYS: Follow-up treatment', done: false }
+          ]);
+          setHistory(prev => [{
+            date: 'Today',
+            disease: mockData.disease,
+            severity: mockData.severity,
+            trend: 'down'
+          }, ...prev].slice(0, 3));
+          setTreatmentType('chemical');
+          setStep(3);
+        }, 1500);
+      };
+
+      const shareReport = () => {
+        const text = `FarmGuard AI Report: ${results.disease} detected (${results.confidence}% confidence). Action: Apply fungicide within 24hrs. Loss if untreated: KES ${results.loss.toLocaleString()}. Treatment cost: KES ${results.treatments.chemical.cost.toLocaleString()}. Net savings: KES ${(results.loss - results.treatments.chemical.cost).toLocaleString()}. Market price: KES ${results.marketPrice}/kg.`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      };
+
+      const handleChat = (e) => {
+        e.preventDefault();
+        if(!chatInput.trim()) return;
+        const userInput = chatInput.trim();
+        setChatMsgs(prev => [...prev, {role: 'user', text: userInput}]);
+        setChatInput('');
+        
+        setTimeout(() => {
+          let reply = "I'm here to help! To use this site: 1. Select your crop and season. 2. Tap the camera icon or drag a photo of your crop's leaf to upload it. 3. Click 'Analyze Crop' to get an AI diagnosis, treatment plan, and cost analysis.";
+          const lowerInput = userInput.toLowerCase();
+          
+          if (lowerInput.includes('action plan') || lowerInput.includes('task')) {
+            reply = "The Action Plan gives you a step-by-step timeline (e.g., NOW, 24 HRS, 7 DAYS) to treat your crop. You can check off tasks as you complete them to track your progress!";
+          } else if (lowerInput.includes('harvest') || lowerInput.includes('disease')) {
+            reply = "Based on your disease detection, apply fungicide today. Next: remove infected leaves in 24 hours. Market prices are KES 50/kg - harvest in 2 weeks for best prices.";
+          } else if (lowerInput.includes('voice')) {
+            reply = "Click the 'Use Voice' button and simply say 'maize leaf disease' to automatically load a sample image for analysis.";
+          }
+          
+          setChatMsgs(prev => [...prev, {role: 'bot', text: reply}]);
+        }, 800);
+      };
+
+      const renderConfidence = (conf) => {
+        let color = '#10b981'; // 0-50 (Wait, prompt says: 0-50% Orange, 51-75% Yellow, 76-100% Red)
+        if(conf > 75) color = '#ef4444'; // Red
+        else if(conf > 50) color = '#eab308'; // Yellow
+        else color = '#f97316'; // Orange
+
+        const dashArray = `${conf}, 100`;
+
+        return (
+          <div className="w-40 h-40 mx-auto relative flex items-center justify-center">
+             <svg viewBox="0 0 36 36" className="circular-chart w-full h-full absolute inset-0">
+              <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="circle" strokeDasharray={dashArray} stroke={color} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="text-center z-10">
+              <div className="text-3xl font-black text-slate-800 leading-none">{conf}%</div>
+              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Confidence</div>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen pb-20 md:pb-8">
+          {/* Top Bar */}
+          <header className="bg-white shadow-sm p-4 sticky top-0 z-30 flex justify-between items-center border-b border-slate-200">
+            <h1 className="text-2xl font-extrabold text-emerald-600 tracking-tight">🌱 FarmGuard AI</h1>
+            <button onClick={() => setLang(lang === 'en' ? 'sw' : 'en')} className="px-4 py-1.5 rounded-full border-2 border-emerald-100 text-emerald-700 text-sm font-bold hover:bg-emerald-50 transition-colors">
+              {lang === 'en' ? 'SWAHILI' : 'ENGLISH'}
+            </button>
+          </header>
+
+          <main className="max-w-6xl mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            {/* Left Sidebar: History */}
+            <div className="hidden md:block md:col-span-3">
+              <div className="glass rounded-2xl p-5 sticky top-24 shadow-sm">
+                <h3 className="font-bold text-slate-800 mb-4 text-lg">{t.history}</h3>
+                {history.length === 0 ? <p className="text-sm text-slate-500">No recent scans.</p> : (
+                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+                    {history.map((h, i) => (
+                      <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div className={`flex items-center justify-center w-4 h-4 rounded-full border-2 border-white text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ${h.trend === 'down' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                        <div className="w-[calc(100%-2rem)] md:w-[calc(50%-2.5rem)] p-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                          <div className="font-bold text-slate-800 text-sm mb-1">{h.disease}</div>
+                          <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
+                            {h.trend === 'down' ? <span className="text-red-500 font-bold">↓ Worsening</span> : <span className="text-emerald-500 font-bold">↑ Improving</span>}
+                          </div>
+                          <div className="text-slate-400 text-[10px] mt-1 uppercase tracking-wider">{h.date}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="md:col-span-6 space-y-6">
+              
+              {/* Step 1: Upload */}
+              {step === 1 && (
+                <div className="glass rounded-3xl p-6 md:p-8 shadow-md border border-white">
+                  <h2 className="text-2xl font-extrabold text-slate-800 mb-6">{t.upload}</h2>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-600 mb-2">{t.crop}</label>
+                      <select value={crop} onChange={e=>setCrop(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none">
+                        <option>Maize</option><option>Wheat</option><option>Cassava</option><option>Tomato</option><option>Coffee</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-600 mb-2">{t.season}</label>
+                      <select value={season} onChange={e=>setSeason(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none">
+                        <option>Planting</option><option>Growing</option><option>Harvesting</option><option>Rainy</option><option>Dry</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors group ${isDragging ? 'border-emerald-500 bg-emerald-100 scale-[1.02]' : 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50'}`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        setImage(URL.createObjectURL(e.dataTransfer.files[0]));
+                      }
+                    }}
+                  >
+                    {image ? (
+                      <img src={image} alt="Crop" className="mx-auto max-h-56 rounded-xl object-cover shadow-sm" />
+                    ) : (
+                      <div>
+                        <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">📸</div>
+                        <p className="text-slate-500 font-bold">Tap or drag photo here</p>
+                      </div>
+                    )}
+                    <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={(e) => {
+                      if(e.target.files[0]) setImage(URL.createObjectURL(e.target.files[0]));
+                    }} />
+                  </div>
+
+                  <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                    <button onClick={handleVoice} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-all ${isListening ? 'bg-red-500 text-white shadow-lg shadow-red-200 scale-[1.02]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                      <Icons.Mic />
+                      {isListening ? (
+                        <div className="waveform"><span></span><span></span><span></span></div>
+                      ) : t.voiceText}
+                    </button>
+                    {image && (
+                      <button onClick={startAnalysis} className="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                        {t.analyze}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Analyzing */}
+              {step === 2 && (
+                <div className="glass rounded-3xl p-12 text-center shadow-md flex flex-col items-center justify-center min-h-[400px]">
+                  <div className="loader mb-6"></div>
+                  <h2 className="text-2xl font-extrabold text-slate-800 mb-2">Analyzing {crop}...</h2>
+                  <p className="text-slate-500 font-medium">Checking against 50+ known diseases</p>
+                </div>
+              )}
+
+              {/* Step 3: Results */}
+              {step === 3 && results && (
+                <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
+                  
+                  {/* 12. Urgency Banner */}
+                  <div className="bg-red-500 text-white rounded-2xl p-4 flex items-center gap-4 shadow-lg shadow-red-200">
+                    <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm"><Icons.Alert /></div>
+                    <div className="flex-1">
+                      <div className="font-extrabold text-lg tracking-wide uppercase">{t.urgency}</div>
+                      <div className="text-red-100 font-medium opacity-90 text-sm">Critical {results.disease} detected. Immediate action required.</div>
+                    </div>
+                  </div>
+
+                  {/* Top Card: Detection & Confidence */}
+                  <div className="glass rounded-3xl p-6 md:p-8 shadow-sm flex flex-col sm:flex-row items-center gap-8">
+                    <div className="w-full sm:w-1/3 shrink-0">
+                      {renderConfidence(results.confidence)}
+                    </div>
+                    <div className="w-full sm:w-2/3 text-center sm:text-left">
+                      <div className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-black uppercase tracking-widest mb-3">High Severity</div>
+                      <h2 className="text-3xl font-extrabold text-slate-900 mb-2">{results.disease}</h2>
+                      <p className="text-slate-500 font-medium mb-6">{t.detected} in {crop} ({season} season)</p>
+                      <button onClick={shareReport} className="flex items-center justify-center sm:justify-start gap-2 text-white font-bold bg-[#25D366] hover:bg-[#128C7E] px-6 py-3 rounded-xl w-full sm:w-auto transition-colors shadow-md shadow-green-200">
+                        <Icons.Share /> {t.share}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Net Benefit Calculator */}
+                  <div className="glass rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                    <h3 className="font-extrabold text-slate-800 mb-6 text-xl">{t.netBenefit}</h3>
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-center items-center">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div className="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Gain (If Treated)</div>
+                        <div className="font-black text-emerald-600 text-sm md:text-xl">KES {results.loss.toLocaleString()}</div>
+                      </div>
+                      <div className="font-black text-slate-300 text-2xl">-</div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div className="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">{t.cost}</div>
+                        <div className="font-black text-red-500 text-sm md:text-xl">KES {results.treatments[treatmentType].cost.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div className="mt-6 bg-emerald-500 text-white p-4 rounded-2xl text-center font-black text-2xl shadow-lg shadow-emerald-200">
+                      = +KES {(results.loss - results.treatments[treatmentType].cost).toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Treatment Comparison */}
+                  <div className="glass rounded-3xl p-6 md:p-8 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-extrabold text-slate-800 text-xl">Treatment Options</h3>
+                      <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200">
+                        <button onClick={()=>setTreatmentType('chemical')} className={`px-4 py-1.5 text-sm rounded-lg font-bold transition-all ${treatmentType === 'chemical' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>{t.chemical}</button>
+                        <button onClick={()=>setTreatmentType('organic')} className={`px-4 py-1.5 text-sm rounded-lg font-bold transition-all ${treatmentType === 'organic' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>{t.organic}</button>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white border-2 border-slate-100 rounded-2xl p-5">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-black text-xl text-slate-900 mb-1">{results.treatments[treatmentType].name}</div>
+                          <div className="text-sm font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Takes {results.treatments[treatmentType].time}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-black text-3xl text-emerald-600">{results.treatments[treatmentType].effect}%</div>
+                          <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Effective</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-sm font-bold bg-blue-50 text-blue-700 p-3 rounded-xl border border-blue-100">
+                        {results.treatments[treatmentType].desc}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Timeline (Checkboxes) */}
+                  <div className="glass rounded-3xl p-6 md:p-8 shadow-sm">
+                    <h3 className="font-extrabold text-slate-800 mb-6 text-xl">{t.action}</h3>
+                    <div className="space-y-3">
+                      {tasks.map(task => (
+                        <label key={task.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer border-2 transition-all ${task.done ? 'bg-slate-50 border-slate-200 opacity-60' : 'bg-white border-emerald-100 shadow-sm hover:border-emerald-300'}`}>
+                          <div className={`w-6 h-6 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${task.done ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'}`}>
+                            {task.done && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                          <span className={`font-bold ${task.done ? 'line-through text-slate-500' : 'text-slate-800'}`}>{task.text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button onClick={() => {setStep(1); setImage(null);}} className="w-full py-4 bg-slate-800 text-white font-extrabold rounded-2xl hover:bg-slate-900 transition-colors shadow-lg shadow-slate-200">
+                    Scan Another Crop
+                  </button>
+
+                </div>
+              )}
+            </div>
+
+            {/* Right Sidebar: Resources */}
+            <div className="hidden md:block md:col-span-3">
+              <div className="glass rounded-2xl p-5 sticky top-24 shadow-sm">
+                <h3 className="font-bold text-slate-800 mb-4 text-lg">{t.resources}</h3>
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="font-extrabold text-slate-800">Mavuno Agrovet</div>
+                    <div className="text-xs font-medium text-slate-500 flex items-center gap-1 my-2"><Icons.Map /> 2.3 km away • <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Open Now</span></div>
+                    <div className="flex gap-2 mt-3">
+                      <button className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-colors"><Icons.Map /> Directions</button>
+                      <button className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-colors"><Icons.Phone /> Call</button>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="font-extrabold text-slate-800">Gov. Extension Officer</div>
+                    <div className="text-xs font-medium text-slate-500 flex items-center gap-1 my-2">Available Mon-Fri</div>
+                    <button className="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-colors"><Icons.Phone /> Call 0800...</button>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="font-extrabold text-slate-800">Farmers Cooperative</div>
+                    <div className="text-xs font-medium text-slate-500 flex items-center gap-1 my-2"><Icons.Map /> 5 km away • Buyers Available</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </main>
+
+          {/* Floating Chatbot */}
+          <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
+            {chatOpen ? (
+              <div className="bg-white rounded-2xl shadow-2xl shadow-emerald-900/20 w-[90vw] max-w-[380px] overflow-hidden flex flex-col border border-slate-200 animate-[fadeIn_0.2s_ease-out]">
+                <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+                  <div className="font-extrabold flex items-center gap-2 text-emerald-400"><Icons.Chat /> AI Assistant</div>
+                  <button onClick={() => setChatOpen(false)} className="hover:bg-slate-800 p-1 rounded-lg transition-colors"><Icons.Close /></button>
+                </div>
+                <div className="h-[350px] overflow-y-auto p-4 bg-slate-50 space-y-4">
+                  {chatMsgs.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-medium ${m.role === 'user' ? 'bg-emerald-500 text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm shadow-sm'}`}>
+                        {m.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={handleChat} className="p-3 bg-white border-t border-slate-200 flex gap-2">
+                  <input value={chatInput} onChange={e=>setChatInput(e.target.value)} type="text" placeholder={t.chatHint} className="flex-1 p-3 bg-slate-100 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  <button type="submit" disabled={!chatInput.trim()} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors">Send</button>
+                </form>
+              </div>
+            ) : (
+              <button onClick={() => setChatOpen(true)} className="bg-slate-900 hover:bg-black text-emerald-400 w-16 h-16 rounded-full flex items-center justify-center shadow-xl shadow-slate-900/20 transition-transform hover:scale-105">
+                <Icons.Chat />
+              </button>
+            )}
+          </div>
+
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
