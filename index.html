@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmGuard AI</title>
+    
+    <!-- React & ReactDOM via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for in-browser JSX parsing -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #0ea5e9;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --dark: #0f172a;
+            --surface-alt: #f1f5f9;
+            --text: #334155;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--surface-alt);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(158, 86%, 89%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(199, 93%, 89%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(39, 94%, 86%, 1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(158, 86%, 89%, 1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; color: var(--dark); }
+
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .app-header { text-align: center; margin-bottom: 3rem; }
+        .app-header h1 {
+            font-size: 3rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .app-header p { font-size: 1.1rem; color: var(--text-muted); }
+
+        .glass-card {
+            background: var(--glass-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: 1.5rem;
+            padding: 2rem; box-shadow: var(--shadow-lg); transition: all 0.3s ease;
+        }
+        .glass-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-glow); }
+
+        .upload-area {
+            border: 2px dashed var(--primary); border-radius: 1rem;
+            padding: 3rem 2rem; text-align: center; cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.5); transition: all 0.3s ease;
+        }
+        .upload-area:hover, .upload-area.drag-active {
+            background-color: var(--success-light); border-color: var(--primary-dark);
+        }
+
+        .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .upload-text { font-size: 1.25rem; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; }
+        .file-input { display: none; }
+
+        .image-preview { width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.75rem; margin-bottom: 1rem; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 0.5rem;
+            border: none; cursor: pointer; transition: all 0.3s ease; gap: 0.5rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.39); }
+
+        .results-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; margin-top: 2rem; }
+        .result-section { padding: 1.5rem; border-radius: 1rem; background: white; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+        
+        .col-12 { grid-column: span 12; }
+        .col-8 { grid-column: span 8; }
+        .col-4 { grid-column: span 4; }
+        @media (max-width: 992px) { .col-8, .col-4 { grid-column: span 12; } }
+
+        .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        .highlight-value { font-size: 2.5rem; font-weight: 700; font-family: 'Outfit', sans-serif; line-height: 1.2; margin-bottom: 0.5rem; }
+        
+        .badge {
+            display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px;
+            font-size: 0.875rem; font-weight: 600; text-transform: uppercase;
+        }
+        .badge-High, .badge-Immediate { background-color: var(--danger-light); color: var(--danger); }
+        .badge-Medium, .badge-Soon { background-color: var(--warning-light); color: var(--warning); }
+        .badge-Low, .badge-Monitor { background-color: var(--success-light); color: var(--success); }
+
+        .impact-card { background: linear-gradient(135deg, #fff1f2, #ffe4e6); border-color: #fecdd3; position: relative; overflow: hidden; }
+        .impact-value { font-size: 3rem; font-weight: 700; color: var(--danger); font-family: 'Outfit', sans-serif; }
+
+        .treatment-list { list-style: none; }
+        .treatment-list li { position: relative; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+        .treatment-list li::before { content: '→'; position: absolute; left: 0; color: var(--primary); font-weight: bold; }
+
+        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 0; }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid var(--surface-alt);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .flow-indicator { display: flex; justify-content: center; align-items: center; margin-bottom: 2rem; gap: 1rem; }
+        .flow-step { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; color: var(--text-muted); }
+        .flow-step.active { color: var(--primary); font-weight: 600; }
+        .flow-dot {
+            width: 24px; height: 24px; border-radius: 50%; background-color: var(--surface-alt);
+            display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+        }
+        .flow-step.active .flow-dot { background-color: var(--primary); color: white; }
+        .flow-line { height: 2px; width: 40px; background-color: var(--border); }
+        .flow-line.active { background-color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef } = React;
+
+        function App() {
+            const [step, setStep] = useState(1);
+            const [selectedImage, setSelectedImage] = useState(null);
+            const [previewUrl, setPreviewUrl] = useState(null);
+            const [results, setResults] = useState(null);
+            const [isDragging, setIsDragging] = useState(false);
+            const fileInputRef = useRef(null);
+
+            const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+            const handleDragLeave = () => setIsDragging(false);
+            const handleDrop = (e) => {
+                e.preventDefault(); setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageSelect(e.dataTransfer.files[0]);
+                }
+            };
+            const handleFileInput = (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleImageSelect(e.target.files[0]);
+                }
+            };
+
+            const handleImageSelect = (file) => {
+                setSelectedImage(file);
+                setPreviewUrl(URL.createObjectURL(file));
+            };
+
+            const startAnalysis = () => {
+                if (!selectedImage) return;
+                setStep(2);
+                
+                // Simulate network delay then provide robust mock response
+                setTimeout(() => {
+                    const fname = selectedImage.name.toLowerCase();
+                    let data;
+                    if (fname.includes('tomato')) {
+                        data = {
+                            disease_name: "Tomato Late Blight", confidence: 0.92, severity: "High", urgency: "Immediate",
+                            treatment: ["Apply copper-based fungicide immediately", "Destroy heavily infected plants", "Avoid overhead watering"],
+                            treatment_cost_kes: 1500, yield_loss_percent: 60, financial_loss_kes: 25000, market_price_per_kg: 80, buyers: ["City Groceries", "Regional Processor"]
+                        };
+                    } else if (fname.includes('healthy')) {
+                        data = {
+                            disease_name: "Healthy Crop", confidence: 0.98, severity: "Low", urgency: "Monitor",
+                            treatment: ["Maintain current watering schedule", "Apply standard fertilizer as planned"],
+                            treatment_cost_kes: 0, yield_loss_percent: 0, financial_loss_kes: 0, market_price_per_kg: 55, buyers: ["Local Market", "Export Agent"]
+                        };
+                    } else {
+                        data = {
+                            disease_name: "Maize Leaf Blight", confidence: 0.87, severity: "High", urgency: "Immediate",
+                            treatment: ["Apply fungicide within 24 hours", "Remove infected leaves to prevent spread"],
+                            treatment_cost_kes: 2000, yield_loss_percent: 40, financial_loss_kes: 12000, market_price_per_kg: 50, buyers: ["Local Cooperative", "Nairobi Fresh Market"]
+                        };
+                    }
+                    setResults(data);
+                    setStep(3);
+                }, 1500);
+            };
+
+            const formatKes = (amount) => `KES ${amount.toLocaleString()}`;
+
+            return (
+                <div className="app-container">
+                    <header className="app-header">
+                        <h1>🌱 FarmGuard AI</h1>
+                        <p>Intelligent Decision Support & Financial Insight for Farmers</p>
+                    </header>
+
+                    <div className="flow-indicator">
+                        <div className={`flow-step ${step >= 1 ? 'active' : ''}`}><div className="flow-dot">1</div><span>Upload</span></div>
+                        <div className={`flow-line ${step >= 2 ? 'active' : ''}`}></div>
+                        <div className={`flow-step ${step >= 2 ? 'active' : ''}`}><div className="flow-dot">2</div><span>Detection</span></div>
+                        <div className={`flow-line ${step >= 3 ? 'active' : ''}`}></div>
+                        <div className={`flow-step ${step >= 3 ? 'active' : ''}`}><div className="flow-dot">3</div><span>Action & Impact</span></div>
+                    </div>
+
+                    <main>
+                        {step === 1 && (
+                            <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                                <h2 className="section-title">Scan Crop Image</h2>
+                                <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>Upload a photo to receive an instant diagnosis and financial impact report.</p>
+                                
+                                <div className={`upload-area ${isDragging ? 'drag-active' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current.click()}>
+                                    {previewUrl ? <img src={previewUrl} className="image-preview" /> : <><div className="upload-icon">📸</div><div className="upload-text">Drag & Drop Image Here</div></>}
+                                    <input type="file" ref={fileInputRef} onChange={handleFileInput} className="file-input" accept="image/*" />
+                                </div>
+                                
+                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                    <button className="btn" style={{ background: 'var(--surface-alt)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); alert('Voice input disabled in demo.'); }}>🎤 Voice Input</button>
+                                </div>
+
+                                {previewUrl && (
+                                    <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        <button className="btn" onClick={(e) => { e.stopPropagation(); setSelectedImage(null); setPreviewUrl(null); }}>Change</button>
+                                        <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); startAnalysis(); }}>Analyze Crop 🚀</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                                <div className="loader-container">
+                                    <div className="spinner"></div>
+                                    <h2>Analyzing Crop Health...</h2>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && results && (
+                            <div>
+                                <div className="glass-card" style={{ marginBottom: '1.5rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                                    <img src={previewUrl} style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '1rem' }} />
+                                    <div>
+                                        <h2 style={{ fontSize: '2rem', margin: 0 }}>{results.disease_name} <span className={`badge badge-${results.severity}`}>{results.severity}</span></h2>
+                                        <p style={{ color: 'var(--text-muted)' }}>Confidence: {(results.confidence * 100).toFixed(1)}%</p>
+                                        <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => { setStep(1); setSelectedImage(null); setPreviewUrl(null); setResults(null); }}>Scan Another</button>
+                                    </div>
+                                </div>
+
+                                <div className="results-grid">
+                                    <div className="result-section col-8">
+                                        <h3 className="section-title">🛠️ Recommended Action</h3>
+                                        <div style={{ marginBottom: '1rem' }}><span className={`badge badge-${results.urgency}`}>{results.urgency} Action Required</span></div>
+                                        <ul className="treatment-list">{results.treatment.map((step, i) => <li key={i}>{step}</li>)}</ul>
+                                        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface-alt)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontWeight: 600 }}>Treatment Cost:</span><span style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatKes(results.treatment_cost_kes)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="result-section impact-card col-4">
+                                        <h3 className="section-title text-danger">⚠️ Financial Risk</h3>
+                                        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>If left untreated.</p>
+                                        <div style={{ marginBottom: '1.5rem' }}>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--danger)' }}>Estimated Loss</div>
+                                            <div className="impact-value">{formatKes(results.financial_loss_kes)}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--danger)' }}>Potential Yield Loss</div>
+                                            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--danger)' }}>{results.yield_loss_percent}%</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="result-section col-12">
+                                        <h3 className="section-title">📈 Market Insights (Post-Harvest)</h3>
+                                        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                                <div style={{ color: 'var(--text-muted)' }}>Current Market Price</div>
+                                                <div className="highlight-value" style={{ color: 'var(--secondary)' }}>{formatKes(results.market_price_per_kg)} <span style={{ fontSize: '1rem' }}>/ kg</span></div>
+                                            </div>
+                                            <div style={{ flex: 2, minWidth: '250px' }}>
+                                                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Suggested Buyers</div>
+                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                    {results.buyers.map((b, i) => <span key={i} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--surface-alt)', borderRadius: '0.5rem' }}>🤝 {b}</span>)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
